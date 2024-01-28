@@ -9,7 +9,7 @@ object SampleData {
         Message(
             "Lexi",
             """Test...Test...Test...
-                Boats 'N Hoes!""".trim()
+                joo!""".trim()
         ),
         Message(
             "Lexi",
