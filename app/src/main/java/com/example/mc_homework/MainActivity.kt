@@ -37,8 +37,14 @@ import androidx.navigation.Navigation
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.room.Room
 
 class MainActivity : ComponentActivity() {
+    val db = Room.databaseBuilder(
+        applicationContext,
+        AppDatabase::class.java, "message.db"
+    ).build()
+    val dao = db.userDao()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -67,7 +73,7 @@ fun Navigation(){
 
 @Composable
 fun HomeScreen(navController: NavController){
-    Column(){
+    Column{
         IconButton(
             onClick = { navController.navigate("Settings") },
             modifier = Modifier.align(Alignment.End)
@@ -79,13 +85,22 @@ fun HomeScreen(navController: NavController){
         Conversation(SampleData.conversationSample)
     }
 }
+@Composable
+fun Conversation(messages: List<Message>){
+    LazyColumn{
+        items(messages) {
+                message -> MessageCard(message)
+        }
+    }
+}
+
 
 @Composable
 fun SettingsScreen(navController: NavController) {
     var text by remember{
         mutableStateOf("Lexi")
     }
-    Column() {
+    Column{
         IconButton(
             onClick = { navController.navigate("HomeScreen"){
                 popUpTo("HomeScreen"){
@@ -110,15 +125,6 @@ fun SettingsScreen(navController: NavController) {
         TextField(value = text, onValueChange = {
             text = it
         })
-    }
-}
-
-@Composable
-fun Conversation(messages: List<Message>){
-    LazyColumn{
-        items(messages) {
-                message -> MessageCard(message)
-        }
     }
 }
 
