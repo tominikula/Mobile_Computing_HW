@@ -37,18 +37,24 @@ import androidx.navigation.Navigation
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.room.Database
 import androidx.room.Room
+import androidx.room.RoomDatabase
 
 class MainActivity : ComponentActivity() {
-    val db = Room.databaseBuilder(
-        applicationContext,
-        AppDatabase::class.java, "message.db"
-    ).build()
-    val dao = db.userDao()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MC_homeworkTheme{
+                val db = Room.databaseBuilder(
+                    applicationContext,
+                    AppDatabase::class.java, "database-name"
+                ).build()
+                val paska = db.userDao()
+                paska.upsertUser(User(userName = "default"))
+
+                val userDB = AppDatabase.getDatabase(this)
+                val toinenPaska = userDB.userDao()
                 Navigation()
             }
         }
@@ -93,7 +99,6 @@ fun Conversation(messages: List<Message>){
         }
     }
 }
-
 
 @Composable
 fun SettingsScreen(navController: NavController) {
