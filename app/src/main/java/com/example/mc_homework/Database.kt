@@ -6,6 +6,7 @@ import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
@@ -22,35 +23,28 @@ data class User(
 @Dao
 interface UserDao{
     @Query("SELECT * FROM User")
-    fun getAll(): List<User>
 
+    suspend fun getAll(): List<User>
     @Query("SELECT * FROM User WHERE uid = :uid")
-    fun findUserById(uid: Int): User
 
+    suspend fun findUserById(uid: Int): User
     @Insert
-    fun insertAll(vararg user: User)
+    suspend fun insertAll(vararg user: User)
 
-    @Upsert
-    fun upsertUser(user: User)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUser(user: User)
 
     @Update
-    fun update(user: User)
-
+    suspend fun update(user: User)
 }
 
 @Database(entities = [User::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
-/*
-    val db = Room.databaseBuilder(
-        applicationContext,
-        AppDatabase::class.java, "database-name"
-    ).build()
-*/
     companion object {
         @Volatile
-        private var Instance: RoomDatabase? = null
-        fun getDatabase(applicationContext: Context): RoomDatabase {
+        private var Instance: AppDatabase? = null
+        fun getDatabase(applicationContext: Context): AppDatabase {
             return Instance ?: synchronized(this){
                 Room.databaseBuilder(
                     applicationContext,

@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.navigation.compose.NavHost
@@ -40,21 +41,20 @@ import androidx.navigation.compose.rememberNavController
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MC_homeworkTheme{
-                val db = Room.databaseBuilder(
-                    applicationContext,
-                    AppDatabase::class.java, "database-name"
-                ).build()
-                val paska = db.userDao()
-                paska.upsertUser(User(userName = "default"))
-
-                val userDB = AppDatabase.getDatabase(this)
-                val toinenPaska = userDB.userDao()
+                val database = AppDatabase.getDatabase(applicationContext)
+                val dao = database.userDao()
+                CoroutineScope.launch(Dispatchers.IO) {
+                    dao.insertUser(User(userName = "default"))
+                }
                 Navigation()
             }
         }
@@ -64,6 +64,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Navigation(){
     val navController = rememberNavController()
+
     NavHost(
         navController = navController,
         startDestination = "HomeScreen"
