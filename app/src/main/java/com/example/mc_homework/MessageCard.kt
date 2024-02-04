@@ -1,5 +1,6 @@
 package com.example.mc_homework
 
+import android.content.Context
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
@@ -29,7 +30,7 @@ import androidx.compose.ui.unit.dp
 data class Message(val author: String, val body: String)
 
 @Composable
-fun MessageCard(msg: Message) {
+fun MessageCard(msg: Message, viewModel: SettingsViewModel) {
     Row(modifier = Modifier.padding(all = 8.dp)) {
         Image(
             painter = painterResource(R.drawable.bnh),

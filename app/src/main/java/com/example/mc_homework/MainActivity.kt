@@ -1,5 +1,6 @@
 package com.example.mc_homework
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.mc_homework.ui.theme.MC_homeworkTheme
 import android.content.res.Configuration
+import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -30,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
@@ -43,43 +47,47 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
+    private val viewModel by viewModels<SettingsViewModel>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MC_homeworkTheme{
-                val database = AppDatabase.getDatabase(applicationContext)
-                val dao = database.userDao()
-                CoroutineScope.launch(Dispatchers.IO) {
-                    dao.insertUser(User(userName = "default"))
-                }
-                Navigation()
+                val context = LocalContext.current
+                val userDao = AppDatabase.getDatabase(context).userDao()
+                val userRepository = UserRepository(userDao)
+                val viewModel = SettingsViewModel(userRepository)
+                Navigation(viewModel)
             }
         }
     }
 }
 
 @Composable
-fun Navigation(){
+fun Navigation(viewModel: SettingsViewModel){
     val navController = rememberNavController()
+
+    viewModel.saveUser("default")
 
     NavHost(
         navController = navController,
         startDestination = "HomeScreen"
     ){
         composable(route = "HomeScreen"){
-            HomeScreen(navController)
+            HomeScreen(navController, viewModel)
         }
         composable(route = "Settings"){
-            SettingsScreen(navController)
+            SettingsScreen(navController, viewModel)
         }
     }
 }
 
 @Composable
-fun HomeScreen(navController: NavController){
+fun HomeScreen(navController: NavController, viewModel: SettingsViewModel){
     Column{
         IconButton(
             onClick = { navController.navigate("Settings") },
@@ -89,20 +97,20 @@ fun HomeScreen(navController: NavController){
                 Icons.Rounded.Settings, contentDescription = "",
             )
         }
-        Conversation(SampleData.conversationSample)
+        Conversation(SampleData.conversationSample, viewModel)
     }
 }
 @Composable
-fun Conversation(messages: List<Message>){
+fun Conversation(messages: List<Message>, viewModel: SettingsViewModel){
     LazyColumn{
         items(messages) {
-                message -> MessageCard(message)
+                message -> MessageCard(message, viewModel)
         }
     }
 }
 
 @Composable
-fun SettingsScreen(navController: NavController) {
+fun SettingsScreen(navController: NavController, context: Context) {
     var text by remember{
         mutableStateOf("Lexi")
     }
@@ -131,12 +139,17 @@ fun SettingsScreen(navController: NavController) {
         TextField(value = text, onValueChange = {
             text = it
         })
+        LaunchedEffect(Unit){
+            val database = AppDatabase.getDatabase(context)
+            val dao = database.userDao()
+            dao.insertUser(User(uid = 0, userName = text))
+        }
     }
 }
 
 
 
-
+/*
 @Preview
 @Composable
 fun PreviewConversation(){
@@ -160,4 +173,4 @@ fun PreviewMessageCard() {
             )
         }
     }
-}
+}*/
