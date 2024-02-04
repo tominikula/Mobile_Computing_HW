@@ -35,7 +35,7 @@ interface UserDao{
     suspend fun insertUser(user: User)
 
     @Update
-    suspend fun update(user: User)
+    suspend fun updateUser(user: User)
 }
 
 @Database(entities = [User::class], version = 1)

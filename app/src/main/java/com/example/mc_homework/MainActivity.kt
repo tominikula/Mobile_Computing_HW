@@ -49,6 +49,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.livedata.observeAsState
 
 class MainActivity : ComponentActivity() {
 
@@ -110,17 +112,24 @@ fun Conversation(messages: List<Message>, viewModel: SettingsViewModel){
 }
 
 @Composable
-fun SettingsScreen(navController: NavController, context: Context) {
-    var text by remember{
-        mutableStateOf("Lexi")
+fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
+    var currentUser by remember { mutableStateOf<User?>(null)}
+
+    /*val currentUser by viewModel.currentUser.observeAsState()*/
+
+    var username by remember{
+        mutableStateOf(currentUser?.userName ?: "default")
     }
     Column{
         IconButton(
-            onClick = { navController.navigate("HomeScreen"){
-                popUpTo("HomeScreen"){
-                    inclusive = true
+            onClick = {
+                viewModel.saveUser(username)
+                navController.navigate("HomeScreen"){
+                    popUpTo("HomeScreen"){
+                        inclusive = true
+                    }
                 }
-            } },
+            },
             modifier = Modifier.align(Alignment.Start)
         ) {
             Icon(
@@ -136,14 +145,9 @@ fun SettingsScreen(navController: NavController, context: Context) {
                 .clip(RectangleShape)
                 .border(1.5.dp, MaterialTheme.colorScheme.primary, RectangleShape)
         )
-        TextField(value = text, onValueChange = {
-            text = it
+        TextField(value = username, onValueChange = {
+            username = it
         })
-        LaunchedEffect(Unit){
-            val database = AppDatabase.getDatabase(context)
-            val dao = database.userDao()
-            dao.insertUser(User(uid = 0, userName = text))
-        }
     }
 }
 
