@@ -1,6 +1,7 @@
 package com.example.mc_homework
 
 import android.content.Context
+import androidx.lifecycle.LiveData
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
@@ -23,13 +24,13 @@ data class User(
 @Dao
 interface UserDao{
     @Query("SELECT * FROM User")
-
     suspend fun getAll(): List<User>
-    @Query("SELECT * FROM User WHERE uid = :uid")
 
+    @Query("SELECT * FROM User WHERE uid = :uid")
     suspend fun findUserById(uid: Int): User
-    @Insert
-    suspend fun insertAll(vararg user: User)
+
+    @Query("SELECT * FROM User WHERE uid = :uid")
+    fun findUserByIdLive(uid: Int): LiveData<User>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: User)

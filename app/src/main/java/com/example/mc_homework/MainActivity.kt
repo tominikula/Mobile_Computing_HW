@@ -113,13 +113,18 @@ fun Conversation(messages: List<Message>, viewModel: SettingsViewModel){
 
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
-    var currentUser by remember { mutableStateOf<User?>(null)}
+    /*var currentUser by remember { mutableStateOf<User?>(null)}*/
 
-    /*val currentUser by viewModel.currentUser.observeAsState()*/
+    val currentUser by viewModel.currentUser.observeAsState()
 
     var username by remember{
         mutableStateOf(currentUser?.userName ?: "default")
     }
+
+    LaunchedEffect(currentUser) {
+        username = currentUser?.userName ?: "default"
+    }
+
     Column{
         IconButton(
             onClick = {

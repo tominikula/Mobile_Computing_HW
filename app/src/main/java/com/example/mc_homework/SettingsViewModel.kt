@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(private val userRepository: UserRepository) : ViewModel() {
+    var currentUser: LiveData<User> = userRepository.findUserByIdLive(0)
 
    fun saveUser(userName: String) {
         viewModelScope.launch {
@@ -15,18 +16,33 @@ class SettingsViewModel(private val userRepository: UserRepository) : ViewModel(
     }
 
     suspend fun getUserByID(uid: Int): User {
-        return userRepository.findUserByID(uid)
+        return userRepository.findUserById(uid)
+    }
+
+    fun currentUserUpdate(uid: Int) {
+        viewModelScope.launch {
+            val user = userRepository.findUserByIdLive(uid)
+            currentUser = user
+        }
     }
 }
 
 class UserRepository(private val userDao: UserDao) {
+
     suspend fun insertUser(user: User) {
         userDao.insertUser(user)
     }
-    suspend fun findUserByID(uid: Int): User{
+    suspend fun findUserById(uid: Int): User{
         return userDao.findUserById(uid)
     }
+
+    fun findUserByIdLive(uid: Int): LiveData<User> {
+        return userDao.findUserByIdLive(uid)
+    }
 }
+
+
+
 /*fun getUserByID(uid: Int): User{
      viewModelScope.launch {
          return userRepository.findUserByID(uid)
