@@ -17,7 +17,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,6 +33,16 @@ data class Message(val author: String, val body: String)
 
 @Composable
 fun MessageCard(msg: Message, viewModel: SettingsViewModel) {
+    val currentUser by viewModel.currentUser.observeAsState()
+
+    var username by remember{
+        mutableStateOf(currentUser?.userName ?: "")
+    }
+
+    LaunchedEffect(currentUser) {
+        username = currentUser?.userName ?: ""
+    }
+
     Row(modifier = Modifier.padding(all = 8.dp)) {
         Image(
             painter = painterResource(R.drawable.bnh),
@@ -54,7 +66,7 @@ fun MessageCard(msg: Message, viewModel: SettingsViewModel) {
             Spacer(modifier = Modifier.height(10.dp))
             //author of text
             Text(
-                text = msg.author,
+                text = username,
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.titleSmall
             )
