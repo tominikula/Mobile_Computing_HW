@@ -117,5 +117,8 @@ dependencies {
     implementation("androidx.room:room-paging:$room_version")
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+
     implementation("androidx.compose.runtime:runtime-livedata")
+
+    implementation("io.coil-kt:coil-compose:2.5.0")
 }

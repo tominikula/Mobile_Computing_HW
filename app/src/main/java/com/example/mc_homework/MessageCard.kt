@@ -1,6 +1,7 @@
 package com.example.mc_homework
 
 import android.content.Context
+import android.net.Uri
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
@@ -23,11 +24,21 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.layout.ContentScale
+import kotlin.contracts.contract
 
 data class Message(val author: String, val body: String)
 
@@ -36,11 +47,11 @@ fun MessageCard(msg: Message, viewModel: SettingsViewModel) {
     val currentUser by viewModel.currentUser.observeAsState()
 
     var username by remember{
-        mutableStateOf(currentUser?.userName ?: "")
+        mutableStateOf(currentUser?.userName ?: "default")
     }
 
     LaunchedEffect(currentUser) {
-        username = currentUser?.userName ?: ""
+        username = currentUser?.userName ?: "default"
     }
 
     Row(modifier = Modifier.padding(all = 8.dp)) {
@@ -51,6 +62,9 @@ fun MessageCard(msg: Message, viewModel: SettingsViewModel) {
                 .size(60.dp)
                 .clip(RectangleShape)
                 .border(1.5.dp, MaterialTheme.colorScheme.primary, RectangleShape)
+                .clickable {
+
+                }
         )
         Spacer(modifier = Modifier.width(8.dp))
         //State of the message (isExpanded)
@@ -76,7 +90,9 @@ fun MessageCard(msg: Message, viewModel: SettingsViewModel) {
                 shape = MaterialTheme.shapes.medium,
                 shadowElevation = 1.dp,
                 color = surfaceColor,
-                modifier = Modifier.animateContentSize().padding(1.dp)
+                modifier = Modifier
+                    .animateContentSize()
+                    .padding(1.dp)
             ) {
                 Text(
                     text = msg.body,

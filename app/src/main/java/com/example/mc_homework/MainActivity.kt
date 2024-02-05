@@ -1,5 +1,6 @@
 package com.example.mc_homework
 
+import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -9,9 +10,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.mc_homework.ui.theme.MC_homeworkTheme
 import android.content.res.Configuration
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,15 +48,14 @@ import androidx.navigation.Navigation
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import androidx.activity.compose.rememberLauncherForActivityResult
 
 class MainActivity : ComponentActivity() {
 
@@ -62,7 +67,7 @@ class MainActivity : ComponentActivity() {
                 val context = LocalContext.current
                 val userDao = AppDatabase.getDatabase(context).userDao()
                 val userRepository = UserRepository(userDao)
-                val viewModel = SettingsViewModel(userRepository)
+                val viewModel = SettingsViewModel(userRepository, context)
                 Navigation(viewModel)
             }
         }
@@ -73,7 +78,7 @@ class MainActivity : ComponentActivity() {
 fun Navigation(viewModel: SettingsViewModel){
     val navController = rememberNavController()
 
-    viewModel.saveUser("default")
+    /*viewModel.saveUser("default")*/
 
     NavHost(
         navController = navController,
@@ -116,12 +121,17 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
     val currentUser by viewModel.currentUser.observeAsState()
 
     var username by remember{
-        mutableStateOf(currentUser?.userName ?: "")
+        mutableStateOf(currentUser?.userName ?: "default")
     }
 
     LaunchedEffect(currentUser) {
-        username = currentUser?.userName ?: ""
+        username = currentUser?.userName ?: "default"
     }
+
+    val photoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri -> viewModel.setImageUri(uri)}
+    )
 
     Column{
         IconButton(
@@ -140,21 +150,41 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
             )
         }
         Text(text = "User:")
-        Image(
-            painter = painterResource(R.drawable.bnh),
-            contentDescription = "Contact profile picture",
-            modifier = Modifier
-                .size(60.dp)
-                .clip(RectangleShape)
-                .border(1.5.dp, MaterialTheme.colorScheme.primary, RectangleShape)
-        )
+        viewModel.readUriFromFile()
+        if(viewModel.selectedImageUri != null){
+            AsyncImage(
+                model = viewModel.selectedImageUri,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(RectangleShape)
+                    .border(1.5.dp, MaterialTheme.colorScheme.primary, RectangleShape)
+                    .clickable {
+                        photoPicker.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+            )
+        }else{
+            Image(
+                painter = painterResource(R.drawable.bnh),
+                contentDescription = "Contact profile picture",
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(RectangleShape)
+                    .border(1.5.dp, MaterialTheme.colorScheme.primary, RectangleShape)
+                    .clickable {
+                        photoPicker.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+            )
+        }
         TextField(value = username, onValueChange = {
             username = it
         })
     }
 }
-
-
 
 /*
     /*var currentUser by remember { mutableStateOf<User?>(null)}*/
