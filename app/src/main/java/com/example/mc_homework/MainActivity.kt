@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
 fun Navigation(viewModel: SettingsViewModel){
     val navController = rememberNavController()
 
-    /*viewModel.saveUser("default")*/
+    viewModel.saveUser("default", null)
 
     NavHost(
         navController = navController,
@@ -128,15 +128,23 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
         username = currentUser?.userName ?: "default"
     }
 
+    var chosenImg by remember {
+        mutableStateOf(viewModel.getUserByName(username).image)
+    }
+
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> viewModel.setImageUri(uri)}
+        onResult = { uri ->
+            if (uri != null) {
+                viewModel.saveUser(username, viewModel.copyImg(uri).toString())
+            }
+        }
     )
 
     Column{
         IconButton(
             onClick = {
-                viewModel.saveUser(username)
+                viewModel.saveUser(username, chosenImg)
                 navController.navigate("HomeScreen"){
                     popUpTo("HomeScreen"){
                         inclusive = true
@@ -150,10 +158,9 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
             )
         }
         Text(text = "User:")
-        viewModel.readUriFromFile()
-        if(viewModel.selectedImageUri != null){
+        if(viewModel.getUserByName(username).image != null){
             AsyncImage(
-                model = viewModel.selectedImageUri,
+                model = viewModel.getUserByName(username).image,
                 contentDescription = null,
                 modifier = Modifier
                     .size(60.dp)

@@ -18,19 +18,21 @@ import androidx.room.Upsert
 @Entity
 data class User(
     @PrimaryKey val uid: Int = 0,
-    @ColumnInfo(name = "username") val userName: String?
+    @ColumnInfo(name = "username") val userName: String?,
+    @ColumnInfo(name = "image") val image: String?
 )
 
 @Dao
 interface UserDao{
-    @Query("SELECT * FROM User")
-    suspend fun getAll(): List<User>
 
     @Query("SELECT * FROM User WHERE uid = :uid")
     suspend fun findUserById(uid: Int): User
 
     @Query("SELECT * FROM User WHERE uid = :uid")
     fun findUserByIdLive(uid: Int): LiveData<User>
+
+    @Query("SELECT * FROM User WHERE username LIKE :name LIMIT 1 ")
+    fun findUserByName(name: String): User
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: User)
@@ -50,7 +52,8 @@ abstract class AppDatabase : RoomDatabase() {
                 Room.databaseBuilder(
                     applicationContext,
                     AppDatabase::class.java, "database-name"
-                ).build().also {Instance = it}
+                ).allowMainThreadQueries()
+                .build().also {Instance = it}
             }
         }
     }

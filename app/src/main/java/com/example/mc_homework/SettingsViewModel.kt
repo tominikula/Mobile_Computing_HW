@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
@@ -41,11 +42,11 @@ import java.io.OutputStreamWriter
 
 class SettingsViewModel(private val userRepository: UserRepository, context: Context) : ViewModel() {
     var currentUser: LiveData<User> = userRepository.findUserByIdLive(0)
-    val appContext = context
+    private val appContext = context
 
-   fun saveUser(userName: String) {
+   fun saveUser(userName: String, imageUri: String?) {
         viewModelScope.launch {
-            val user = User(uid = 0, userName = userName)
+            val user = User(uid = 0, userName = userName, image = imageUri)
             userRepository.insertUser(user)
         }
     }
@@ -54,37 +55,17 @@ class SettingsViewModel(private val userRepository: UserRepository, context: Con
         return userRepository.findUserById(uid)
     }
 
-    var selectedImageUri by mutableStateOf<Uri?>(null)
-
-    fun setImageUri(uri: Uri?){
-        selectedImageUri = uri
-        if (uri != null) {
-            writeImageUri(uri)
-        }
+    fun getUserByName(username: String): User{
+        return userRepository.findUserByName(username)
     }
 
-    private val uriFileName = "uri.txt"
-    private fun writeImageUri(uri: Uri){
-        val f = File(appContext.getExternalFilesDir("Uris"), uriFileName)
-        if(f.exists()){
-            f.deleteRecursively()
-        }
-        f.createNewFile()
-        val fileWriter = BufferedWriter(FileOutputStream(f).bufferedWriter())
-        fileWriter.write(uri.toString())
-        fileWriter.close()
-    }
-
-    fun readUriFromFile() {
-        val f = File(appContext.getExternalFilesDir("Uris"), uriFileName)
-        if(!f.exists()){
-            Toast.makeText(appContext, "File not found", Toast.LENGTH_SHORT).show()
-        }else{
-            val fileReader = BufferedReader(FileInputStream(f).bufferedReader())
-            selectedImageUri = Uri.parse(fileReader.readLine())
-            fileReader.close()
-        }
-    }
+    fun copyImg(newUri: Uri): Uri{
+        val input = appContext.contentResolver.openInputStream(newUri)
+        val outPutFile = appContext.filesDir.resolve("profilepic.jpg")
+        input?.copyTo(outPutFile.outputStream())
+        input?.close()
+        return outPutFile.toUri()
+    }//image copying from uri
 }
 
 class UserRepository(private val userDao: UserDao) {
@@ -92,12 +73,17 @@ class UserRepository(private val userDao: UserDao) {
     suspend fun insertUser(user: User) {
         userDao.insertUser(user)
     }
+
     suspend fun findUserById(uid: Int): User{
         return userDao.findUserById(uid)
     }
 
     fun findUserByIdLive(uid: Int): LiveData<User> {
         return userDao.findUserByIdLive(uid)
+    }
+
+    fun findUserByName(name: String): User{
+        return userDao.findUserByName(name)
     }
 }
 
@@ -190,4 +176,36 @@ private fun saveImageUri(uri: Uri){
             }
         }
     }*/
+ */
+/*
+ var selectedImageUri by mutableStateOf<Uri?>(null)
+
+    fun setImageUri(uri: Uri?){
+        selectedImageUri = uri
+        if (uri != null) {
+            writeImageUri(uri)
+        }
+    }
+    private val uriFileName = "uri.txt"
+    private fun writeImageUri(uri: Uri){
+        val f = File(appContext.getExternalFilesDir("Uris"), uriFileName)
+        if(f.exists()){
+            f.deleteRecursively()
+        }
+        f.createNewFile()
+        val fileWriter = BufferedWriter(FileOutputStream(f).bufferedWriter())
+        fileWriter.write(uri.toString())
+        fileWriter.close()
+    }
+
+    fun readUriFromFile() {
+        val f = File(appContext.getExternalFilesDir("Uris"), uriFileName)
+        if(!f.exists()){
+            Toast.makeText(appContext, "File not found", Toast.LENGTH_SHORT).show()
+        }else{
+            val fileReader = BufferedReader(FileInputStream(f).bufferedReader())
+            selectedImageUri = Uri.parse(fileReader.readLine())
+            fileReader.close()
+        }
+    }
  */
