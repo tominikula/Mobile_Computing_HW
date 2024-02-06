@@ -59,7 +59,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 
 class MainActivity : ComponentActivity() {
 
-    private val viewModel by viewModels<SettingsViewModel>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -77,8 +76,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Navigation(viewModel: SettingsViewModel){
     val navController = rememberNavController()
-
-    viewModel.saveUser("default", null)
 
     NavHost(
         navController = navController,
@@ -118,7 +115,7 @@ fun Conversation(messages: List<Message>, viewModel: SettingsViewModel){
 
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
-    val currentUser by viewModel.currentUser.observeAsState()
+    /*val currentUser by viewModel.currentUser.observeAsState()
 
     var username by remember{
         mutableStateOf(currentUser?.userName ?: "default")
@@ -126,28 +123,33 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
 
     LaunchedEffect(currentUser) {
         username = currentUser?.userName ?: "default"
+    }*/
+
+    var currentUserName by remember {
+        mutableStateOf(viewModel.getUserByID(0).userName ?: "default")
     }
 
     var chosenImg by remember {
-        mutableStateOf(viewModel.getUserByName(username).image)
+        mutableStateOf(viewModel.getUserByName(currentUserName).image)
     }
 
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri ->
+        onResult = {uri ->
             if (uri != null) {
-                viewModel.saveUser(username, viewModel.copyImg(uri).toString())
+                viewModel.saveUser(currentUserName, viewModel.copyImg(uri).toString())
             }
+            chosenImg = uri.toString()
         }
     )
 
     Column{
         IconButton(
             onClick = {
-                viewModel.saveUser(username, chosenImg)
                 navController.navigate("HomeScreen"){
                     popUpTo("HomeScreen"){
                         inclusive = true
+                        viewModel.saveUser(currentUserName, chosenImg)
                     }
                 }
             },
@@ -158,9 +160,9 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
             )
         }
         Text(text = "User:")
-        if(viewModel.getUserByName(username).image != null){
+        if(viewModel.getUserByID(0).image != null){
             AsyncImage(
-                model = viewModel.getUserByName(username).image,
+                model = viewModel.getUserByID(0).image,
                 contentDescription = null,
                 modifier = Modifier
                     .size(60.dp)
@@ -187,8 +189,8 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
                     }
             )
         }
-        TextField(value = username, onValueChange = {
-            username = it
+        TextField(value = currentUserName, onValueChange = {
+            currentUserName = it
         })
     }
 }

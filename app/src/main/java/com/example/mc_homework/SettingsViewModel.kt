@@ -41,17 +41,17 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 
 class SettingsViewModel(private val userRepository: UserRepository, context: Context) : ViewModel() {
-    var currentUser: LiveData<User> = userRepository.findUserByIdLive(0)
+    /*var currentUser: LiveData<User> = userRepository.findUserByIdLive(0)*/
     private val appContext = context
 
-   fun saveUser(userName: String, imageUri: String?) {
+    fun saveUser(userName: String, imageUriString: String?) {
         viewModelScope.launch {
-            val user = User(uid = 0, userName = userName, image = imageUri)
+            val user = User(uid = 0, userName = userName, image = imageUriString)
             userRepository.insertUser(user)
         }
     }
 
-    suspend fun getUserByID(uid: Int): User {
+    fun getUserByID(uid: Int): User {
         return userRepository.findUserById(uid)
     }
 
@@ -70,11 +70,11 @@ class SettingsViewModel(private val userRepository: UserRepository, context: Con
 
 class UserRepository(private val userDao: UserDao) {
 
-    suspend fun insertUser(user: User) {
+    fun insertUser(user: User) {
         userDao.insertUser(user)
     }
 
-    suspend fun findUserById(uid: Int): User{
+    fun findUserById(uid: Int): User{
         return userDao.findUserById(uid)
     }
 

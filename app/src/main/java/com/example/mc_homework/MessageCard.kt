@@ -44,7 +44,7 @@ data class Message(val author: String, val body: String)
 
 @Composable
 fun MessageCard(msg: Message, viewModel: SettingsViewModel) {
-    val currentUser by viewModel.currentUser.observeAsState()
+    /*val currentUser by viewModel.currentUser.observeAsState()
 
     var username by remember{
         mutableStateOf(currentUser?.userName ?: "default")
@@ -52,6 +52,9 @@ fun MessageCard(msg: Message, viewModel: SettingsViewModel) {
 
     LaunchedEffect(currentUser) {
         username = currentUser?.userName ?: "default"
+    }*/
+    var currentUserName by remember {
+        mutableStateOf(viewModel.getUserByID(0).userName ?: "default")
     }
 
     Row(modifier = Modifier.padding(all = 8.dp)) {
@@ -80,7 +83,7 @@ fun MessageCard(msg: Message, viewModel: SettingsViewModel) {
             Spacer(modifier = Modifier.height(10.dp))
             //author of text
             Text(
-                text = username,
+                text = currentUserName,
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.titleSmall
             )

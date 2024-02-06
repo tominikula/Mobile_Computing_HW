@@ -13,7 +13,6 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Update
-import androidx.room.Upsert
 
 @Entity
 data class User(
@@ -25,8 +24,8 @@ data class User(
 @Dao
 interface UserDao{
 
-    @Query("SELECT * FROM User WHERE uid = :uid")
-    suspend fun findUserById(uid: Int): User
+    @Query("SELECT * FROM User WHERE uid = :uid LIMIT 1")
+    fun findUserById(uid: Int): User
 
     @Query("SELECT * FROM User WHERE uid = :uid")
     fun findUserByIdLive(uid: Int): LiveData<User>
@@ -35,10 +34,10 @@ interface UserDao{
     fun findUserByName(name: String): User
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertUser(user: User)
+    fun insertUser(user: User)
 
     @Update
-    suspend fun updateUser(user: User)
+    fun updateUser(user: User)
 }
 
 @Database(entities = [User::class], version = 1)
@@ -53,6 +52,7 @@ abstract class AppDatabase : RoomDatabase() {
                     applicationContext,
                     AppDatabase::class.java, "database-name"
                 ).allowMainThreadQueries()
+                .fallbackToDestructiveMigration()
                 .build().also {Instance = it}
             }
         }
