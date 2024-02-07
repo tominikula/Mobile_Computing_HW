@@ -44,31 +44,30 @@ data class Message(val author: String, val body: String)
 
 @Composable
 fun MessageCard(msg: Message, viewModel: SettingsViewModel) {
-    /*val currentUser by viewModel.currentUser.observeAsState()
-
-    var username by remember{
-        mutableStateOf(currentUser?.userName ?: "default")
-    }
-
-    LaunchedEffect(currentUser) {
-        username = currentUser?.userName ?: "default"
-    }*/
     var currentUserName by remember {
         mutableStateOf(viewModel.getUserByID(0).userName ?: "default")
     }
 
     Row(modifier = Modifier.padding(all = 8.dp)) {
-        Image(
-            painter = painterResource(R.drawable.bnh),
-            contentDescription = "Contact profile picture",
-            modifier = Modifier
-                .size(60.dp)
-                .clip(RectangleShape)
-                .border(1.5.dp, MaterialTheme.colorScheme.primary, RectangleShape)
-                .clickable {
-
-                }
-        )
+        if(viewModel.getUserByID(0).image != null){
+            AsyncImage(
+                model = viewModel.getUserByID(0).image,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(RectangleShape)
+                    .border(1.5.dp, MaterialTheme.colorScheme.primary, RectangleShape)
+            )
+        }else{
+            Image(
+                painter = painterResource(R.drawable.bnh),
+                contentDescription = "Contact profile picture",
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(RectangleShape)
+                    .border(1.5.dp, MaterialTheme.colorScheme.primary, RectangleShape)
+            )
+        }
         Spacer(modifier = Modifier.width(8.dp))
         //State of the message (isExpanded)
         var isExpanded by remember { mutableStateOf(false) }

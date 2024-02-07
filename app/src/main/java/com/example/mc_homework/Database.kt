@@ -27,14 +27,14 @@ interface UserDao{
     @Query("SELECT * FROM User WHERE uid = :uid LIMIT 1")
     fun findUserById(uid: Int): User
 
-    @Query("SELECT * FROM User WHERE uid = :uid")
-    fun findUserByIdLive(uid: Int): LiveData<User>
-
     @Query("SELECT * FROM User WHERE username LIKE :name LIMIT 1 ")
     fun findUserByName(name: String): User
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertUser(user: User)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insertDefaultUser(user: User)
 
     @Update
     fun updateUser(user: User)

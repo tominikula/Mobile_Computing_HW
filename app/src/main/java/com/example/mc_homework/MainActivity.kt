@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity() {
                 val userDao = AppDatabase.getDatabase(context).userDao()
                 val userRepository = UserRepository(userDao)
                 val viewModel = SettingsViewModel(userRepository, context)
+                viewModel.setDefaultUser(User(0, "default", null))
                 Navigation(viewModel)
             }
         }
@@ -104,6 +105,7 @@ fun HomeScreen(navController: NavController, viewModel: SettingsViewModel){
         Conversation(SampleData.conversationSample, viewModel)
     }
 }
+
 @Composable
 fun Conversation(messages: List<Message>, viewModel: SettingsViewModel){
     LazyColumn{
@@ -115,15 +117,6 @@ fun Conversation(messages: List<Message>, viewModel: SettingsViewModel){
 
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
-    /*val currentUser by viewModel.currentUser.observeAsState()
-
-    var username by remember{
-        mutableStateOf(currentUser?.userName ?: "default")
-    }
-
-    LaunchedEffect(currentUser) {
-        username = currentUser?.userName ?: "default"
-    }*/
 
     var currentUserName by remember {
         mutableStateOf(viewModel.getUserByID(0).userName ?: "default")
@@ -139,7 +132,8 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
             if (uri != null) {
                 viewModel.saveUser(currentUserName, viewModel.copyImg(uri).toString())
             }
-            chosenImg = uri.toString()
+            //chosenImg = uri.toString()
+            chosenImg = viewModel.getUserByID(0).image
         }
     )
 
@@ -196,7 +190,7 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
 }
 
 /*
-    /*var currentUser by remember { mutableStateOf<User?>(null)}*/
+
 
 @Preview
 @Composable
