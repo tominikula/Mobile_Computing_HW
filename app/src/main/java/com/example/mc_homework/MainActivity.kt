@@ -132,8 +132,8 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
             if (uri != null) {
                 viewModel.saveUser(currentUserName, viewModel.copyImg(uri).toString())
             }
-            //chosenImg = uri.toString()
-            chosenImg = viewModel.getUserByID(0).image
+            chosenImg = uri.toString() //galleria uri nopeaan käyttöön
+            //chosenImg = viewModel.getUserByID(0).image
         }
     )
 
@@ -143,7 +143,7 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
                 navController.navigate("HomeScreen"){
                     popUpTo("HomeScreen"){
                         inclusive = true
-                        viewModel.saveUser(currentUserName, chosenImg)
+                        viewModel.saveUser(currentUserName, viewModel.getUserByID(0).image)
                     }
                 }
             },
@@ -154,7 +154,7 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
             )
         }
         Text(text = "User:")
-        if(viewModel.getUserByID(0).image != null){
+        if(chosenImg != null){
             AsyncImage(
                 model = viewModel.getUserByID(0).image,
                 contentDescription = null,
