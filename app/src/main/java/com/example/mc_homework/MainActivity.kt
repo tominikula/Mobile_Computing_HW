@@ -1,7 +1,11 @@
 package com.example.mc_homework
 
+import android.Manifest
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,10 +15,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.mc_homework.ui.theme.MC_homeworkTheme
 import android.content.res.Configuration
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,12 +29,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,20 +46,15 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
+import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.getSystemService
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
-import androidx.activity.compose.rememberLauncherForActivityResult
 
 class MainActivity : ComponentActivity() {
 
@@ -117,6 +116,7 @@ fun Conversation(messages: List<Message>, viewModel: SettingsViewModel){
 
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
+    val context = LocalContext.current
 
     var currentUserName by remember {
         mutableStateOf(viewModel.getUserByID(0).userName ?: "default")
@@ -134,6 +134,24 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
             }
             chosenImg = uri.toString() //galleria uri nopeaan käyttöön
             //chosenImg = viewModel.getUserByID(0).image
+        }
+    )
+
+    var hasNotifPermission by remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            mutableStateOf(
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            )
+        } else mutableStateOf(true)
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            hasNotifPermission = isGranted
         }
     )
 
@@ -156,7 +174,7 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
         Text(text = "User:")
         if(chosenImg != null){
             AsyncImage(
-                model = viewModel.getUserByID(0).image,
+                model = chosenImg,
                 contentDescription = null,
                 modifier = Modifier
                     .size(60.dp)
@@ -186,7 +204,19 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
         TextField(value = currentUserName, onValueChange = {
             currentUserName = it
         })
+        Button(onClick = {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                if(hasNotifPermission){
+                    val app = MyApp()
+                    app.showNotification(context)
+                }
+            }
+        }) {
+            Text("Enable notifications")
+        }
     }
+
 }
 
 /*
