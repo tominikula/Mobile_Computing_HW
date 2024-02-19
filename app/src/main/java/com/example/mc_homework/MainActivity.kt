@@ -54,6 +54,8 @@ import androidx.navigation.Navigation
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import coil.compose.AsyncImage
 
 class MainActivity : ComponentActivity() {
@@ -67,6 +69,13 @@ class MainActivity : ComponentActivity() {
                 val userRepository = UserRepository(userDao)
                 val viewModel = SettingsViewModel(userRepository, context)
                 viewModel.setDefaultUser(User(0, "default", null))
+
+                val sensor = SensorActivity(applicationContext)
+                sensor.init()
+
+                /*val workRequest = OneTimeWorkRequestBuilder<BackGroundWork>()
+                    .build()
+                val workManager = WorkManager.getInstance(applicationContext)*/
                 Navigation(viewModel)
             }
         }
@@ -152,6 +161,10 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             hasNotifPermission = isGranted
+            if(isGranted){
+                val app = MyApp()
+                app.showNotification(context, "Notifications enabled")
+            }
         }
     )
 
@@ -207,10 +220,6 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
         Button(onClick = {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                if(hasNotifPermission){
-                    val app = MyApp()
-                    app.showNotification(context)
-                }
             }
         }) {
             Text("Enable notifications")
