@@ -19,22 +19,36 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.view.CameraController
+import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Face
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,6 +60,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.content.getSystemService
@@ -63,9 +78,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        installSplashScreen().apply {
-
+        if(!hasRequiredPermissions()){
+            ActivityCompat.requestPermissions(
+                this, CAMERAX_PERMISSIONS,0
+            )
         }
+        installSplashScreen().apply{}
         setContent {
             MC_homeworkTheme{
                 val context = LocalContext.current
@@ -77,19 +95,29 @@ class MainActivity : ComponentActivity() {
                 val sensor = SensorActivity(applicationContext)
                 sensor.init()
 
-                /*val workRequest = OneTimeWorkRequestBuilder<BackGroundWork>()
-                    .build()
-                val workManager = WorkManager.getInstance(applicationContext)*/
                 Navigation(viewModel)
             }
         }
+    }
+    fun hasRequiredPermissions(): Boolean{
+        return CAMERAX_PERMISSIONS.all{
+            ContextCompat.checkSelfPermission(
+                applicationContext,
+                it
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+    companion object {
+        private val CAMERAX_PERMISSIONS = arrayOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO
+        )
     }
 }
 
 @Composable
 fun Navigation(viewModel: SettingsViewModel){
     val navController = rememberNavController()
-
     NavHost(
         navController = navController,
         startDestination = "HomeScreen"
@@ -100,19 +128,34 @@ fun Navigation(viewModel: SettingsViewModel){
         composable(route = "Settings"){
             SettingsScreen(navController, viewModel)
         }
+        composable(route = "CameraScreen"){
+            CameraScreen(navController, viewModel)
+        }
     }
 }
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: SettingsViewModel){
     Column{
-        IconButton(
-            onClick = { navController.navigate("Settings") },
-            modifier = Modifier.align(Alignment.End)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ){
-            Icon(
-                Icons.Rounded.Settings, contentDescription = "",
-            )
+            IconButton(
+                onClick = { navController.navigate("CameraScreen") },
+            ){
+                Icon(
+                    Icons.Rounded.Face, contentDescription = "",
+                )
+            }
+            IconButton(
+                onClick = { navController.navigate("Settings") },
+            ){
+                Icon(
+                    Icons.Rounded.Settings, contentDescription = "",
+                )
+            }
         }
         Conversation(SampleData.conversationSample, viewModel)
     }
@@ -229,7 +272,52 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
             Text("Enable notifications")
         }
     }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CameraScreen(navController: NavController, viewModel: SettingsViewModel) {
+    val context = LocalContext.current;
+    Column {
+        IconButton(
+            onClick = {
+                navController.navigate("HomeScreen") {
+                    popUpTo("HomeScreen") {
+                        inclusive = true
+                    }
+                }
+            },
+            modifier = Modifier.align(Alignment.Start)
+        ) {
+            Icon(
+                Icons.Rounded.ArrowBack, contentDescription = "",
+            )
+        }
+    }
+    val scaffoldState = rememberBottomSheetScaffoldState()
+    val controller = remember {
+        LifecycleCameraController(context).apply {
+            setEnabledUseCases(
+                CameraController.IMAGE_CAPTURE
+            )
+        }
+    }
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
+        sheetPeekHeight = 0.dp,
+        sheetContent = {
+        }
+    ) {padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ){
+            CameraPreview(controller = controller,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
+    }
 }
 
 /*
