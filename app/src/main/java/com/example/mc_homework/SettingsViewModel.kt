@@ -1,5 +1,6 @@
 package com.example.mc_homework
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -8,6 +9,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import androidx.core.net.toUri
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class SettingsViewModel(private val userRepository: UserRepository, context: Context) : ViewModel() {
     private val appContext = context
@@ -38,6 +41,13 @@ class SettingsViewModel(private val userRepository: UserRepository, context: Con
         input?.close()
         return outPutFile.toUri()
     }//image copying from uri
+
+    private val _bitmaps = MutableStateFlow<List<Bitmap>>(emptyList())
+    val bitmaps = _bitmaps.asStateFlow()
+
+    fun onTakePhoto(bitmap: Bitmap){
+        _bitmaps.value += bitmap
+    }
 }
 
 class UserRepository(private val userDao: UserDao) {

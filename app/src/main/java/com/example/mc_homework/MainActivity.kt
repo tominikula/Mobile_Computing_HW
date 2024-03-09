@@ -14,11 +14,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.mc_homework.ui.theme.MC_homeworkTheme
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture.OnImageCapturedCallback
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.Image
@@ -37,8 +44,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.Photo
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Face
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
@@ -49,10 +62,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,6 +88,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -146,7 +162,7 @@ fun HomeScreen(navController: NavController, viewModel: SettingsViewModel){
                 onClick = { navController.navigate("CameraScreen") },
             ){
                 Icon(
-                    Icons.Rounded.Face, contentDescription = "",
+                    Icons.Default.CameraAlt, contentDescription = "",
                 )
             }
             IconButton(
@@ -276,6 +292,7 @@ fun SettingsScreen(navController: NavController, viewModel: SettingsViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraScreen(navController: NavController, viewModel: SettingsViewModel) {
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current;
     Column {
         IconButton(
@@ -289,7 +306,7 @@ fun CameraScreen(navController: NavController, viewModel: SettingsViewModel) {
             modifier = Modifier.align(Alignment.Start)
         ) {
             Icon(
-                Icons.Rounded.ArrowBack, contentDescription = "",
+                Icons.Default.ArrowBackIosNew, contentDescription = "",
             )
         }
     }
@@ -301,10 +318,17 @@ fun CameraScreen(navController: NavController, viewModel: SettingsViewModel) {
             )
         }
     }
+    val bitmaps by viewModel.bitmaps.collectAsState()
+
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = 0.dp,
         sheetContent = {
+            PhotoBottomSheetContent(
+                bitmaps = bitmaps,
+                modifier = Modifier
+                .fillMaxWidth()
+            )
         }
     ) {padding ->
         Box(
@@ -315,9 +339,101 @@ fun CameraScreen(navController: NavController, viewModel: SettingsViewModel) {
             CameraPreview(controller = controller,
                 modifier = Modifier.fillMaxSize()
             )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ){
+                IconButton(
+                    onClick = {
+                        navController.navigate("HomeScreen") {
+                            popUpTo("HomeScreen") {
+                                inclusive = true
+                            }
+                        }
+                    }
+                ){
+                    Icon(
+                        Icons.Default.ArrowBackIosNew,
+                        contentDescription = null
+                    )
+                }
+                IconButton(onClick = {
+                    controller.cameraSelector =
+                        if(controller.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA){
+                            CameraSelector.DEFAULT_FRONT_CAMERA
+                        }else CameraSelector.DEFAULT_BACK_CAMERA
+                }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Cameraswitch,
+                        contentDescription = "Switch camera"
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceAround
+            ){
+                IconButton(onClick = {
+                    scope.launch {
+                        scaffoldState.bottomSheetState.expand()
+                    }
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Photo,
+                        contentDescription = "Open gallery"
+                    )
+                }
+                IconButton(onClick = {
+                    takePhoto(
+                        controller = controller,
+                        onPhotoTaken = viewModel::onTakePhoto,
+                        context
+                    )
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.PhotoCamera,
+                        contentDescription = "Take photo"
+                    )
+                }
+            }
         }
 
     }
+}
+
+fun takePhoto(controller: LifecycleCameraController, onPhotoTaken: (Bitmap) -> Unit, context: Context){
+    controller.takePicture(
+        ContextCompat.getMainExecutor(context),
+        object : OnImageCapturedCallback(){
+            override fun onCaptureSuccess(image: ImageProxy) {
+                super.onCaptureSuccess(image)
+
+                val matrix = Matrix().apply{
+                    postRotate(image.imageInfo.rotationDegrees.toFloat())
+                }
+                val rotatedBitmap = Bitmap.createBitmap(
+                    image.toBitmap(),
+                    0,
+                    0,
+                    image.width,
+                    image.height,
+                    matrix,
+                    true
+                )
+                onPhotoTaken(rotatedBitmap)
+            }
+
+            override fun onError(exception: ImageCaptureException) {
+                super.onError(exception)
+                Log.e("Camera", "Couldn't take photo", exception)
+            }
+        }
+    )
 }
 
 /*
